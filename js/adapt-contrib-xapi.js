@@ -584,7 +584,7 @@ define([
       var statement;
       var description = {};
 
-      description[this.get('displayLang')] = view.model.get('instruction');
+      description[this.get('displayLang')] = _.escape(view.model.get('body'));
 
       object.definition = {
         name: this.getNameObject(view.model),

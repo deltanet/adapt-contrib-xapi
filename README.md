@@ -2,16 +2,16 @@
 
 **xAPI** is an *extension* intended for use with the [Adapt framework](https://github.com/adaptlearning/adapt_framework) version 3.0 or greater to pass Experience API (xAPI) statements between the Adapt content and a Learning Record Store (LRS), such as [Learning Locker®](https://learninglocker.net/).  It is compatible with both the Adapt Framework and the Adapt Authoring Tool.
 
-From this point on, the README assumes a certain level of familiarity with the xAPI and the philosophy behind it.  If the xAPI specification is new to you, please start with the documentation at [xapi.com](https://xapi.com/overview/) before continuing. 
+From this point on, the README assumes a certain level of familiarity with the xAPI and the philosophy behind it.  If the xAPI specification is new to you, please start with the documentation at [xapi.com](https://xapi.com/overview/) before continuing.
 
 ## Configuration
-Some setup is required in order to configure the xAPI extension.  If using a standalone Adapt Framework, refer to  [example.json](https://github.com/adaptlearning/adapt-contrib-xapi/blob/master/example.json) for a JSON snipped which should be added to your course's config.json.  If using the Authoring tool you can configure the following attributes:
+Some setup is required in order to configure the xAPI extension.  If using a standalone Adapt Framework, refer to  [example.json](https://github.com/deltanet/adapt-contrib-xapi/blob/master/example.json) for a JSON snipped which should be added to your course's config.json.  If using the Authoring tool you can configure the following attributes:
 
 |Setting|Default|Help|
 |--|--|--|
 |Is Enabled|  `false` | Set to `true` to enable the extension
 |Specification | `xApi` | This must be set
-|Endpoint| | URL to the LRS endpoint 
+|Endpoint| | URL to the LRS endpoint
 |User (or Key)| | This can be configured in your LRS, or omit if using ADL Launch mechanism
 |Password (or Secret)| | (as above)
 |Verb language | `en-US`| Indicates the language of the verbs which will be passed to the LRS
@@ -19,7 +19,7 @@ Some setup is required in order to configure the xAPI extension.  If using a sta
 |Track state| `false` | Lets the LRS manage the course state via the State API
 |LRS connection failure behaviour | Show errors | Indicates what should happen when the course cannot connect to the LRS
 |Component blacklist | `blank,graphic` | A comma-separated list of components which should not send statements.  Set this to an empty string if all components should send a statement.
- 
+
 By default the xAPI extension listens for the following *core* events.  Those without an asterisk (*) can be toggled via configuration:
 
 | Object |Event  |
@@ -60,7 +60,7 @@ Note that the xAPI extension works well with the core Assessment extension.  The
 ## Events
 The following events are triggered by the xAPI extension:
 
-| Event | Description | Parameter(s) | 
+| Event | Description | Parameter(s) |
 |--|--|--|
 |`xapi:lrs:initialize:error`|Triggered when the plugin fails to initialize| An `error` object|
 |`xapi:lrs:initialize:success`|Triggered when the plugin successfully establishes connectivity with the LRS | - |

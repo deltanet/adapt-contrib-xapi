@@ -974,6 +974,7 @@ define([
       var actor = this.get('actor');
       var type = model.get('_type');
       var state = this.get('state');
+      var registration = this.get('registration') || null;
       var collectionName = _.findKey(this.coreObjects, function(o) {
         return o === type || o.indexOf(type) > -1
       });
@@ -1001,7 +1002,7 @@ define([
       });
 
       // Pass the new state to the LRS.
-      this.xapiWrapper.sendState(activityId, actor, collectionName, null, newState, null, null, function(error, xhr) {
+      this.xapiWrapper.sendState(activityId, actor, collectionName, registration, newState, null, null, function(error, xhr) {
         if (error) {
           Adapt.trigger('xapi:lrs:sendState:error', error);
         }
@@ -1021,9 +1022,10 @@ define([
       var activityId = this.get('activityId');
       var actor = this.get('actor');
       var state = {};
+      var registration = this.get('registration') || null;
 
       Async.each(_.keys(this.coreObjects), function(type, nextType) {
-        self.xapiWrapper.getState(activityId, actor, type, null, null, function(error, xhr) {
+        self.xapiWrapper.getState(activityId, actor, type, registration, null, function(error, xhr) {
           _.defer(function() {
             if (error) {
               Adapt.log.warn('adapt-contrib-xapi: getState() failed for ' + activityId + ' (' + type + ')');
@@ -1095,9 +1097,10 @@ define([
       var self = this;
       var activityId = this.get('activityId');
       var actor = this.get('actor');
+      var registration = this.get('registration') || null;
 
       Async.each(_.keys(this.coreObjects), function(type, nextType) {
-        self.xapiWrapper.deleteState(activityId, actor, type, null, null, null, function(error, xhr) {
+        self.xapiWrapper.deleteState(activityId, actor, type, registration, null, null, function(error, xhr) {
           if (error) {
             Adapt.log.warn('adapt-contrib-xapi: deleteState() failed for ' + activityId + ' (' + type + ')');
             return nextType(error);

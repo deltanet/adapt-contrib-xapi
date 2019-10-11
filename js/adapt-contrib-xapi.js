@@ -257,6 +257,12 @@ define([
         }
 
         Adapt.trigger('xapi:lrs:initialize:success');
+
+        var globals = Adapt.course.get('_globals');
+        if (!globals._learnerInfo) {
+          globals._learnerInfo = {};
+        }
+        _.extend(globals._learnerInfo, Adapt.offlineStorage.get("learnerinfo"));
       });
     },
 

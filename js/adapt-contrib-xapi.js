@@ -31,6 +31,7 @@ define([
       activityId: null,
       actor: null,
       shouldTrackState: true,
+      shouldUseRegistration: false,
       componentBlacklist: 'blank,graphic',
       isInitialised: false,
       state: {}
@@ -97,11 +98,12 @@ define([
         }
 
         this.set({
-          activityId: (this.getConfig('_activityID') || this.getLRSAttribute('activity_id') || this.getBaseUrl()),
+          activityId: (this.getLRSAttribute('activity_id') || this.getConfig('_activityID') || this.getBaseUrl()),
           displayLang: Adapt.config.get('_defaultLanguage'),
           lang: this.getConfig('_lang'),
           generateIds: this.getConfig('_generateIds'),
           shouldTrackState: this.getConfig('_shouldTrackState'),
+          shouldUseRegistration: this.getConfig('_shouldUseRegistration') || false,
           componentBlacklist: this.getConfig('_componentBlacklist') || []
         });
 
@@ -175,6 +177,19 @@ define([
     },
 
     /**
+     * Replace the hard-coded _learnerInfo data in _globals with the actual data from the LRS.
+     */
+    getLearnerInfo: function() {
+      var globals = Adapt.course.get('_globals');
+
+      if (!globals._learnerInfo) {
+          globals._learnerInfo = {};
+      }
+
+      _.extend(globals._learnerInfo, Adapt.offlineStorage.get('learnerinfo'));
+    },
+
+    /**
      * Intializes the ADL xapiWrapper code.
      * @param {ErrorOnlyCallback} callback
      */
@@ -184,7 +199,7 @@ define([
         //check to see if configuration has been passed in URL
         this.xapiWrapper = window.xapiWrapper || ADL.XAPIWrapper;
         if (this.checkWrapperConfig()) {
-          //URL had all necessary configuration so we continue using it
+          // URL had all necessary configuration so we continue using it.
           // Set the LRS specific properties.
           this.set({
             registration: this.getLRSAttribute('registration'),
@@ -427,6 +442,9 @@ define([
         return;
       }
 
+      // Allow surfacing the learner's info in _globals.
+      this.getLearnerInfo()
+
       this.listenTo(Adapt, 'app:languageChanged', this.onLanguageChanged);
 
       if (this.get('shouldTrackState')) {
@@ -474,16 +492,10 @@ define([
     },
 
     /**
-     * Creates an xAPI statement related to the Adapt.course object.
-     * @param {object | string} verb - A valid ADL.verbs object or key.
-     * @param {object} [result] - An optional result object.
-     * @return A valid ADL statement object.
+     * Gets an xAPI Activity (with an 'id of the activityId) representing the course.
+     * @returns {ADL.XAPIStatement.Activity} Activity representing the course.
      */
-    getCourseStatement: function(verb, result) {
-      if (typeof result === 'undefined') {
-        result = {};
-      }
-
+    getCourseActivity: function() {
       var object = new ADL.XAPIStatement.Activity(this.get('activityId'));
       var name = {};
       var description = {};
@@ -496,6 +508,22 @@ define([
         name: name,
         description: description
       };
+
+      return object;
+    },
+
+    /**
+     * Creates an xAPI statement related to the Adapt.course object.
+     * @param {object | string} verb - A valid ADL.verbs object or key.
+     * @param {object} [result] - An optional result object.
+     * @return A valid ADL statement object.
+     */
+    getCourseStatement: function(verb, result) {
+      if (typeof result === 'undefined') {
+        result = {};
+      }
+
+      var object = this.getCourseActivity()
 
       // Append the duration.
       switch (verb) {
@@ -590,7 +618,7 @@ define([
       var statement;
       var description = {};
 
-      description[this.get('displayLang')] = _.escape(view.model.get('body'));
+      description[this.get('displayLang')] = this.stripHtml(view.model.get('body'));
 
       object.definition = {
         name: this.getNameObject(view.model),
@@ -634,7 +662,20 @@ define([
       // Answered
       statement = this.getStatement(this.getVerb(ADL.verbs.answered), object, result);
 
+      this.addGroupingActivity(view.model, statement)
       this.sendStatement(statement);
+    },
+
+    /**
+     * Removes the HTML tags/attributes and returns a string.
+     * @param {string} html - A string containing HTML
+     * @returns {string} The same string minus HTML
+     */
+    stripHtml: function(html) {
+      var tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+
+      return tempDiv.textContent || tempDiv.innerText || '';
     },
 
     /**
@@ -671,7 +712,6 @@ define([
      * @param {AdaptModel} model - An instance of AdaptModel, i.e. ContentObjectModel, etc.
      */
     onItemExperience: function(model) {
-
       if (model.get('_id') === 'course') {
         // We don't really want to track actions on the home menu.
         return;
@@ -688,6 +728,7 @@ define([
       // Experienced.
       statement = this.getStatement(this.getVerb(ADL.verbs.experienced), object);
 
+      this.addGroupingActivity(model, statement)
       this.sendStatement(statement);
     },
 
@@ -706,7 +747,6 @@ define([
      * @param {boolean} isComplete - Flag to indicate if the model has been completed
      */
     onItemComplete: function(model, isComplete) {
-
       if (isComplete === false) {
         // The item is not actually completed, e.g. it may have been reset.
         return;
@@ -737,7 +777,68 @@ define([
       // Completed.
       statement = this.getStatement(this.getVerb(ADL.verbs.completed), object, result);
 
+      this.addGroupingActivity(model, statement)
       this.sendStatement(statement);
+    },
+
+    /**
+     * Gets a lesson activity for a given page.
+     * @param {string|Adapt.Model} page - Either an Adapt contentObject model of type 'page', or the _id of one.
+     * @returns {XAPIStatement.Activity} Activity corresponding to the lesson.
+     */
+    getLessonActivity(page) {
+      var pageModel = (typeof page === 'string')
+        ? Adapt.findById(page)
+        : page
+      var activity = new ADL.XAPIStatement.Activity(this.getUniqueIri(pageModel))
+      var name = this.getNameObject(pageModel)
+
+      activity.definition = {
+        name: name,
+        type: ADL.activityTypes.lesson
+      }
+
+      return activity;
+    },
+
+    /**
+     * Adds a 'grouping' and/or 'parent' value to a statement's contextActivities.
+     * Note: the 'parent' is only added in the case of a question component which is part of
+     * an assessment. All articles, blocks and components are grouped by page.
+     * @param {Adapt.Model} model - Any Adapt model.
+     * @param {ADL.XAPIStatement} statement - A valid xAPI statement object.
+     */
+    addGroupingActivity: function(model, statement) {
+      var type = model.get('_type');
+
+      if (type !== 'course') {
+        // Add a grouping for the course.
+        statement.addGroupingActivity(this.getCourseActivity())
+      }
+
+      if (['article', 'block', 'component'].indexOf(type) !== -1) {
+        // Group these items by page/lesson.
+        var pageModel = model.findAncestor('pages')
+
+        statement.addGroupingActivity(this.getLessonActivity(pageModel));
+      }
+
+      if (type === 'component' && model.get('_isPartOfAssessment')) {
+        // Get the article containing this question component.
+        let articleModel = model.findAncestor('articles')
+
+        if (articleModel && articleModel.has('_assessment') && articleModel.get('_assessment')._isEnabled) {
+          // Set the assessment as the parent.
+          var assessment = {
+            id: articleModel.get('_assessment')._id,
+            articleId: articleModel.get('_id'),
+            type: 'article-assessment',
+            pageId: articleModel.get('_parentId')
+          }
+
+          statement.addParentActivity(this.getAssessmentObject(assessment))
+        }
+      }
     },
 
     /**
@@ -761,21 +862,20 @@ define([
     },
 
     /**
-     * Sends an xAPI statement when an assessment has been completed.
-     * @param {object} assessment - Object representing the state of the assessment.
+     * Gets an Activity for use in an xAPI statement.
+     * @param {object} assessment - Object representing the assessment.
+     * @returns {ADL.XAPIStatement.Activity} - Activity representing the assessment.
      */
-    onAssessmentComplete: function(assessment) {
-      var self = this;
+    getAssessmentObject: function(assessment) {
       // Instantiate a Model so it can be used to obtain an IRI.
       var fakeModel = new Backbone.Model({
-        _id: assessment.articleId || assessment.id,
+        _id: assessment.id || assessment.articleId,
         _type: assessment.type,
         pageId: assessment.pageId
       });
 
       var object = new ADL.XAPIStatement.Activity(this.getUniqueIri(fakeModel));
       var name = {};
-      var statement;
 
       name[this.get('displayLang')] = assessment.id || 'Assessment';
 
@@ -784,7 +884,19 @@ define([
         type: ADL.activityTypes.assessment
       };
 
+      return object
+    },
+
+    /**
+     * Sends an xAPI statement when an assessment has been completed.
+     * @param {object} assessment - Object representing the state of the assessment.
+     */
+    onAssessmentComplete: function(assessment) {
+      var self = this;
+
+      var object = this.getAssessmentObject(assessment)
       var result = this.getAssessmentResultObject(assessment);
+      var statement;
 
       if (assessment.isPass) {
         // Passed.
@@ -793,6 +905,9 @@ define([
         // Failed.
         statement = this.getStatement(this.getVerb(ADL.verbs.failed), object, result);
       }
+
+      statement.addGroupingActivity(this.getCourseActivity())
+      statement.addGroupingActivity(this.getLessonActivity(assessment.pageId))
 
       // Delay so that component completion can be recorded before assessment completion.
       _.delay(function() {
@@ -980,7 +1095,9 @@ define([
       var actor = this.get('actor');
       var type = model.get('_type');
       var state = this.get('state');
-      var registration = this.get('registration') || null;
+      var registration = this.get('shouldUseRegistration') === true
+        ? this.get('registration')
+        : null;
       var collectionName = _.findKey(this.coreObjects, function(o) {
         return o === type || o.indexOf(type) > -1
       });
@@ -1027,6 +1144,9 @@ define([
       var self = this;
       var activityId = this.get('activityId');
       var actor = this.get('actor');
+      var registration = this.get('shouldUseRegistration') === true
+        ? this.get('registration')
+        : null;
       var state = {};
       var registration = this.get('registration') || null;
 
@@ -1103,7 +1223,9 @@ define([
       var self = this;
       var activityId = this.get('activityId');
       var actor = this.get('actor');
-      var registration = this.get('registration') || null;
+      var registration = this.get('shouldUseRegistration') === true
+        ? this.get('registration')
+        : null;
 
       Async.each(_.keys(this.coreObjects), function(type, nextType) {
         self.xapiWrapper.deleteState(activityId, actor, type, registration, null, null, function(error, xhr) {

@@ -1154,7 +1154,6 @@ define([
         ? this.get('registration')
         : null;
       var state = {};
-      var registration = this.get('registration') || null;
 
       Async.each(_.keys(this.coreObjects), function(type, nextType) {
         self.xapiWrapper.getState(activityId, actor, type, registration, null, function(error, xhr) {

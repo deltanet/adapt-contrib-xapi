@@ -10,6 +10,7 @@
 		"_lang": "en-US",
 		"_generateIds": false,
 		"_shouldTrackState": false,
+		"_shouldUseRegistration": true,
 		"_coreEvents": {
 			"Adapt": {
 				"router:menu": true,

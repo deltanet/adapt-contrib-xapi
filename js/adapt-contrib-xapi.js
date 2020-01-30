@@ -31,7 +31,7 @@ define([
       activityId: null,
       actor: null,
       shouldTrackState: true,
-      shouldUseRegistration: false,
+      shouldUseRegistration: true,
       componentBlacklist: 'blank,graphic',
       isInitialised: false,
       state: {}
@@ -103,7 +103,7 @@ define([
           lang: this.getConfig('_lang'),
           generateIds: this.getConfig('_generateIds'),
           shouldTrackState: this.getConfig('_shouldTrackState'),
-          shouldUseRegistration: this.getConfig('_shouldUseRegistration') || false,
+          shouldUseRegistration: this.getConfig('_shouldUseRegistration') || true,
           componentBlacklist: this.getConfig('_componentBlacklist') || []
         });
 

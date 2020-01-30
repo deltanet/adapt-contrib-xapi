@@ -794,6 +794,9 @@ define([
         statement = this.getStatement(this.getVerb(ADL.verbs.failed), object, result);
       }
 
+      // log statement to LMS - bespoke debugging
+      this.sendLogToLMS(statement);
+
       // Delay so that component completion can be recorded before assessment completion.
       _.delay(function() {
         self.sendStatement(statement);
@@ -1360,9 +1363,6 @@ define([
      */
     onStatementReady: function(statement, callback, attachments) {
 
-      // log statement to LMS - bespoke debugging
-      this.sendLogToLMS(statement);
-
       this.xapiWrapper.sendStatement(statement, function(error) {
         if (error) {
           Adapt.trigger('xapi:lrs:sendStatement:error', error);
@@ -1486,8 +1486,12 @@ define([
       Adapt.once('notify:closed', Adapt.wait.end);
     },
 
+
+    /**
+     * Sends a statement and registration ID to logging function in LMS.
+     * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
+     */
     sendLogToLMS: function(statement) {
-      // attempt to send the statement and registration ID to logging function in LMS
       var registration = this.get('registration') || null;
       try {
         window.opener.sendStatementToLMS(registration, statement);

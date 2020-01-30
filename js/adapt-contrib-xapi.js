@@ -909,6 +909,9 @@ define([
       statement.addGroupingActivity(this.getCourseActivity())
       statement.addGroupingActivity(this.getLessonActivity(assessment.pageId))
 
+      // log statement to LMS - bespoke debugging
+      this.sendLogToLMS(statement);
+
       // Delay so that component completion can be recorded before assessment completion.
       _.delay(function() {
         self.sendStatement(statement);
@@ -1008,6 +1011,9 @@ define([
 
       // Store a reference that the course has actually been completed.
       this.isComplete = true;
+
+      // log statement to LMS - bespoke debugging
+      this.sendLogToLMS(self.getCourseStatement(completionVerb, result));
 
       _.defer(function() {
         // Send the completion status.
@@ -1478,6 +1484,7 @@ define([
      * @param {array} [attachments] - An array of attachments to pass to the LRS.
      */
     onStatementReady: function(statement, callback, attachments) {
+
       this.xapiWrapper.sendStatement(statement, function(error) {
         if (error) {
           Adapt.trigger('xapi:lrs:sendStatement:error', error);
@@ -1599,6 +1606,21 @@ define([
       // Ensure notify appears on top of the loading screen
       $('.notify').css({ position: 'relative', zIndex: 5001 });
       Adapt.once('notify:closed', Adapt.wait.end);
+    },
+
+
+    /**
+     * Sends a statement and registration ID to logging function in LMS.
+     * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
+     */
+    sendLogToLMS: function(statement) {
+      var registration = this.get('registration') || null;
+      try {
+        window.opener.sendStatementToLMS(registration, statement);
+        console.log('adapt-contrib-xapi: Statement sent to LMS logger.');
+      } catch (error) {
+        console.error('adapt-contrib-xapi: Error sending statement to LMS logger: ' + error);
+      }
     }
   });
 

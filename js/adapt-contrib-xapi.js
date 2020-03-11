@@ -523,7 +523,7 @@ define([
         result = {};
       }
 
-      var object = this.getCourseActivity()
+      var object = this.getCourseActivity();
 
       // Append the duration.
       switch (verb) {
@@ -662,7 +662,7 @@ define([
       // Answered
       statement = this.getStatement(this.getVerb(ADL.verbs.answered), object, result);
 
-      this.addGroupingActivity(view.model, statement)
+      this.addGroupingActivity(view.model, statement);
       this.sendStatement(statement);
     },
 
@@ -728,7 +728,7 @@ define([
       // Experienced.
       statement = this.getStatement(this.getVerb(ADL.verbs.experienced), object);
 
-      this.addGroupingActivity(model, statement)
+      this.addGroupingActivity(model, statement);
       this.sendStatement(statement);
     },
 
@@ -777,7 +777,7 @@ define([
       // Completed.
       statement = this.getStatement(this.getVerb(ADL.verbs.completed), object, result);
 
-      this.addGroupingActivity(model, statement)
+      this.addGroupingActivity(model, statement);
       this.sendStatement(statement);
     },
 
@@ -789,9 +789,9 @@ define([
     getLessonActivity: function(page) {
       var pageModel = (typeof page === 'string')
         ? Adapt.findById(page)
-        : page
-      var activity = new ADL.XAPIStatement.Activity(this.getUniqueIri(pageModel))
-      var name = this.getNameObject(pageModel)
+        : page;
+      var activity = new ADL.XAPIStatement.Activity(this.getUniqueIri(pageModel));
+      var name = this.getNameObject(pageModel);
 
       activity.definition = {
         name: name,
@@ -813,19 +813,19 @@ define([
 
       if (type !== 'course') {
         // Add a grouping for the course.
-        statement.addGroupingActivity(this.getCourseActivity())
+        statement.addGroupingActivity(this.getCourseActivity());
       }
 
       if (['article', 'block', 'component'].indexOf(type) !== -1) {
         // Group these items by page/lesson.
-        var pageModel = model.findAncestor('pages')
+        var pageModel = model.findAncestor('pages');
 
         statement.addGroupingActivity(this.getLessonActivity(pageModel));
       }
 
       if (type === 'component' && model.get('_isPartOfAssessment')) {
         // Get the article containing this question component.
-        let articleModel = model.findAncestor('articles')
+        let articleModel = model.findAncestor('articles');
 
         if (articleModel && articleModel.has('_assessment') && articleModel.get('_assessment')._isEnabled) {
           // Set the assessment as the parent.
@@ -836,7 +836,7 @@ define([
             pageId: articleModel.get('_parentId')
           }
 
-          statement.addParentActivity(this.getAssessmentObject(assessment))
+          statement.addParentActivity(this.getAssessmentObject(assessment));
         }
       }
     },
@@ -884,7 +884,7 @@ define([
         type: ADL.activityTypes.assessment
       };
 
-      return object
+      return object;
     },
 
     /**
@@ -894,7 +894,7 @@ define([
     onAssessmentComplete: function(assessment) {
       var self = this;
 
-      var object = this.getAssessmentObject(assessment)
+      var object = this.getAssessmentObject(assessment);
       var result = this.getAssessmentResultObject(assessment);
       var statement;
 
@@ -906,8 +906,8 @@ define([
         statement = this.getStatement(this.getVerb(ADL.verbs.failed), object, result);
       }
 
-      statement.addGroupingActivity(this.getCourseActivity())
-      statement.addGroupingActivity(this.getLessonActivity(assessment.pageId))
+      statement.addGroupingActivity(this.getCourseActivity());
+      statement.addGroupingActivity(this.getLessonActivity(assessment.pageId));
 
       // log statement to LMS - bespoke debugging
       this.sendLogToLMS(statement);
@@ -1105,7 +1105,7 @@ define([
         ? this.get('registration')
         : null;
       var collectionName = _.findKey(this.coreObjects, function(o) {
-        return o === type || o.indexOf(type) > -1
+        return o === type || o.indexOf(type) > -1;
       });
       var stateCollection = _.isArray(state[collectionName]) ? state[collectionName] : [];
       var newState;
@@ -1526,7 +1526,7 @@ define([
                 // delete the url property which is no longer needed
                 attachment.value = reader.result;
                 delete attachment.url;
-                nextAttachment()
+                nextAttachment();
               };
               reader.readAsBinaryString(this.response);
             }

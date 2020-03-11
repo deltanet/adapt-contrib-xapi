@@ -443,7 +443,7 @@ define([
       }
 
       // Allow surfacing the learner's info in _globals.
-      this.getLearnerInfo()
+      this.getLearnerInfo();
 
       this.listenTo(Adapt, 'app:languageChanged', this.onLanguageChanged);
 

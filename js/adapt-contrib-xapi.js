@@ -15,13 +15,13 @@ define([
 
   'use strict';
 
-  /**
+  /*
    * @callback ErrorOnlyCallback
    * @param {?Error} error
    */
   var xAPI = Backbone.Model.extend({
 
-    /** Declare defaults and model properties */
+    /* Declare defaults and model properties */
 
     // Default model properties.
     defaults: {
@@ -76,7 +76,7 @@ define([
       offlineStorage: 'offlineStorage'
     },
 
-    /** Implementation starts here */
+    /* Implementation starts here */
     initialize: function() {
       if (!Adapt.config) {
         return;
@@ -176,7 +176,7 @@ define([
       }, this));
     },
 
-    /**
+    /*
      * Replace the hard-coded _learnerInfo data in _globals with the actual data from the LRS.
      */
     getLearnerInfo: function() {
@@ -189,7 +189,7 @@ define([
       _.extend(globals._learnerInfo, Adapt.offlineStorage.get('learnerinfo'));
     },
 
-    /**
+    /*
      * Intializes the ADL xapiWrapper code.
      * @param {ErrorOnlyCallback} callback
      */
@@ -257,7 +257,7 @@ define([
       }
     },
 
-    /**
+    /*
      * Triggers 'plugin:endWait' event (if required).
      */
     onInitialised: function(error) {
@@ -292,7 +292,7 @@ define([
       });
     },
 
-    /**
+    /*
      * Sends 'suspended' and 'terminated' statements to the LRS when the window
      * is closed or the browser app is minimised on a device. Sends a 'resume'
      * statement when switching back to a suspended session.
@@ -329,7 +329,7 @@ define([
       this.isTerminated = true;
     },
 
-    /**
+    /*
     * Check Wrapper to see if all parameters needed are set.
     */
     checkWrapperConfig: function() {
@@ -341,7 +341,7 @@ define([
         }
     },
 
-    /**
+    /*
      * Attempt to extract endpoint, user and password from the config.json.
      */
     setWrapperConfig: function() {
@@ -376,7 +376,7 @@ define([
       }
     },
 
-    /**
+    /*
      * Gets the URL the course is currently running on.
      * @return {string} The URL to the current course.
      */
@@ -396,7 +396,7 @@ define([
       return Math.abs((new Date()) - this.startTimeStamp);
     },
 
-    /**
+    /*
      * Converts milliseconds to an ISO8601 duration
      * @param {int} inputMilliseconds - Duration in milliseconds
      * @return {string} - Duration in ISO8601 format
@@ -491,7 +491,7 @@ define([
       }, this);
     },
 
-    /**
+    /*
      * Gets an xAPI Activity (with an 'id of the activityId) representing the course.
      * @returns {ADL.XAPIStatement.Activity} Activity representing the course.
      */
@@ -512,7 +512,7 @@ define([
       return object;
     },
 
-    /**
+    /*
      * Creates an xAPI statement related to the Adapt.course object.
      * @param {object | string} verb - A valid ADL.verbs object or key.
      * @param {object} [result] - An optional result object.
@@ -550,7 +550,7 @@ define([
       return this.getStatement(this.getVerb(verb), object, result);
     },
 
-    /**
+    /*
      * Gets a name object from a given model.
      * @param {Backbone.Model} model - An instance of Adapt.Model (or Backbone.Model).
      * @return {object} An object containing a key-value pair with the language code and name.
@@ -563,7 +563,7 @@ define([
       return name;
     },
 
-    /**
+    /*
      * Gets the activity type for a given model.
      * @param {Backbone.Model} model - An instance of Adapt.Model (or Backbone.Model).
      * @return {string} A URL to the current activity type.
@@ -598,7 +598,7 @@ define([
       return type;
     },
 
-    /**
+    /*
      * Sends an 'answered' statement to the LRS.
      * @param {ComponentView} view - An instance of Adapt.ComponentView.
      */
@@ -666,7 +666,7 @@ define([
       this.sendStatement(statement);
     },
 
-    /**
+    /*
      * Removes the HTML tags/attributes and returns a string.
      * @param {string} html - A string containing HTML
      * @returns {string} The same string minus HTML
@@ -678,7 +678,7 @@ define([
       return tempDiv.textContent || tempDiv.innerText || '';
     },
 
-    /**
+    /*
      * In order to support SCORM 1.2 and SCORM 2004, some of the components return a non-standard
      * response.
      * @param {string} responseType - The type of the response.
@@ -707,7 +707,7 @@ define([
       return response;
     },
 
-    /**
+    /*
      * Sends an xAPI statement when an item has been experienced.
      * @param {AdaptModel} model - An instance of AdaptModel, i.e. ContentObjectModel, etc.
      */
@@ -732,7 +732,7 @@ define([
       this.sendStatement(statement);
     },
 
-    /**
+    /*
      * Checks if a given component is blacklisted from sending statements.
      * @param {string} component - The name of the component.
      * @returns {boolean} true if the component exists on the blacklist.
@@ -741,7 +741,7 @@ define([
       return this.get('componentBlacklist').indexOf(component) !== -1;
     },
 
-    /**
+    /*
      * Sends an xAPI statement when an item has been completed.
      * @param {AdaptModel} model - An instance of AdaptModel, i.e. ComponentModel, BlockModel, etc.
      * @param {boolean} isComplete - Flag to indicate if the model has been completed
@@ -781,7 +781,7 @@ define([
       this.sendStatement(statement);
     },
 
-    /**
+    /*
      * Gets a lesson activity for a given page.
      * @param {string|Adapt.Model} page - Either an Adapt contentObject model of type 'page', or the _id of one.
      * @returns {XAPIStatement.Activity} Activity corresponding to the lesson.
@@ -801,7 +801,7 @@ define([
       return activity;
     },
 
-    /**
+    /*
      * Adds a 'grouping' and/or 'parent' value to a statement's contextActivities.
      * Note: the 'parent' is only added in the case of a question component which is part of
      * an assessment. All articles, blocks and components are grouped by page.
@@ -841,7 +841,7 @@ define([
       }
     },
 
-    /**
+    /*
      * Takes an assessment state and returns a results object based on it.
      * @param {object} assessment - An instance of the assessment state.
      * @return {object} - A result object containing score, success and completion properties.
@@ -861,7 +861,7 @@ define([
       return result;
     },
 
-    /**
+    /*
      * Gets an Activity for use in an xAPI statement.
      * @param {object} assessment - Object representing the assessment.
      * @returns {ADL.XAPIStatement.Activity} - Activity representing the assessment.
@@ -887,7 +887,7 @@ define([
       return object;
     },
 
-    /**
+    /*
      * Sends an xAPI statement when an assessment has been completed.
      * @param {object} assessment - Object representing the state of the assessment.
      */
@@ -918,7 +918,7 @@ define([
       }, 500);
     },
 
-    /**
+    /*
      * Gets a valid 'verb' object in the ADL.verbs and returns the correct language version.
      * @param {object|stirng} verb - A valid ADL verb object or key, e.g. 'completed'.
      * @return {object} An ADL verb object with 'id' and language specific 'display' properties.
@@ -956,7 +956,7 @@ define([
       return singleLanguageVerb;
     },
 
-    /**
+    /*
      * Gets a unique IRI for a given model.
      * @param {AdaptModel} model - An instance of an AdaptModel object.
      * @return {string} An IRI formulated specific to the passed model.
@@ -976,7 +976,7 @@ define([
       return iri;
     },
 
-    /**
+    /*
      * Handler for the Adapt Framework's 'tracking:complete' event.
      * @param {object} completionData
      */
@@ -1021,7 +1021,7 @@ define([
       });
     },
 
-    /**
+    /*
      * Refresh course progress from loaded state.
      */
     restoreState: function() {
@@ -1058,7 +1058,7 @@ define([
       }
     },
 
-    /**
+    /*
      * Generate an XAPIstatement object for the xAPI wrapper sendStatement methods.
      * @param {object} verb - A valid ADL.verbs object.
      * @param {object} object -
@@ -1088,7 +1088,7 @@ define([
       return statement;
     },
 
-    /**
+    /*
      * Sends the state to the or the given model to the configured LRS.
      * @param {AdaptModel} model - The AdaptModel whose state has changed.
      */
@@ -1140,7 +1140,7 @@ define([
       });
     },
 
-    /**
+    /*
      * Retrieves the state information for the current course.
      * @param {ErrorOnlyCallback} [callback]
      */
@@ -1218,7 +1218,7 @@ define([
       });
     },
 
-    /**
+    /*
      * Deletes all state information for the current course.
      * @param {ErrorOnlyCallback} [callback]
      */
@@ -1261,7 +1261,7 @@ define([
       });
     },
 
-    /**
+    /*
      * Retrieve a config item for the current course, e.g. '_activityID'.
      * @param {string} key - The data attribute to fetch.
      * @return {object|boolean} The attribute value, or false if not found.
@@ -1274,7 +1274,7 @@ define([
       return this.config[key];
     },
 
-    /**
+    /*
      * Retrieve an LRS attribute for the current session, e.g. 'actor'.
      * @param {string} key - The attribute to fetch.
      * @return {object|null} the attribute value, or null if not found.
@@ -1360,7 +1360,7 @@ define([
       }
     },
 
-    /**
+    /*
      * Checks that the required properties -- actor and activityId -- are defined, and
      * logs a warning if any of them are not.
      * @return {boolean} true if the properties are valid, false otherwise.
@@ -1389,7 +1389,7 @@ define([
       return true;
     },
 
-    /**
+    /*
      * Prepares to send a single xAPI statement to the LRS.
      * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
      * @param {ADLCallback} [callback]
@@ -1413,7 +1413,7 @@ define([
       }
     },
 
-    /**
+    /*
      * Sends statements using the Fetch API in order to make use of the keepalive
      * feature not available in AJAX requests. This makes the sending of suspended
      * and terminated statements more reliable.
@@ -1460,7 +1460,7 @@ define([
       })
     },
 
-    /**
+    /*
      * Determine if sending the statement involves a Cross Origin Request
      * @param {string} url - the lrs endpoint
      * @returns {boolean}
@@ -1476,7 +1476,7 @@ define([
       return isCORS;
     },
 
-    /**
+    /*
      * Send an xAPI statement to the LRS once all async operations are complete
      * @param {ADL.XAPIStatement} statement - A valid ADL.XAPIStatement object.
      * @param {ADLCallback} [callback]
@@ -1495,7 +1495,7 @@ define([
       }, attachments);
     },
 
-    /**
+    /*
      * Process any attachments that have been added to the statement object by
      * intercepting the send operation at the xapi:preSendStatement trigger
      * If a url is specified for an attachment then retrieve the text content
@@ -1543,7 +1543,7 @@ define([
       }.bind(this));
     },
 
-    /**
+    /*
      * Sends multiple xAPI statements to the LRS.
      * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
      * @param {ErrorOnlyCallback} [callback]
@@ -1608,7 +1608,7 @@ define([
     },
 
 
-    /**
+    /*
      * Sends a statement and registration ID to logging function in LMS.
      * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
      */
@@ -1631,7 +1631,7 @@ define([
     return xAPI.instance;
   };
 
-  /** Adapt event listeners begin here */
+  /* Adapt event listeners begin here */
   Adapt.once('app:dataLoaded', function() {
     var xapi = xAPI.getInstance();
 

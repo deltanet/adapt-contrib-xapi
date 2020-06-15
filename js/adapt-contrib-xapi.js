@@ -188,7 +188,7 @@ define([
 
       _.extend(globals._learnerInfo, Adapt.offlineStorage.get('learnerinfo'));
     },
-  
+
     /**
      * Intializes the ADL xapiWrapper code.
      * @param {ErrorOnlyCallback} callback
@@ -472,6 +472,9 @@ define([
         this.listenTo(Adapt, 'assessments:complete', this.onAssessmentComplete);
       }
 
+      // Listen out for custom statements.
+      this.listenTo(Adapt, 'plugin:customXapiStatement', this.onCustomStatement);
+
       // Standard completion events for the various collection types, i.e.
       // course, contentobjects, articles, blocks and components.
       _.each(_.keys(this.coreEvents), function(key) {
@@ -585,6 +588,10 @@ define([
         }
         case 'page': {
           type = ADL.activityTypes.lesson;
+          break;
+        }
+        default: {
+          type = ADL.activityTypes[model.get('_type')];
           break;
         }
       }
@@ -723,6 +730,42 @@ define([
       statement = this.getStatement(this.getVerb(ADL.verbs.experienced), object);
 
       this.addGroupingActivity(model, statement)
+      this.sendStatement(statement);
+    },
+
+    /**
+    * Sends an xAPI statement when plugin triggers a custom statement.
+    * @param {AdaptModel} model - An instance of AdaptModel, i.e. ContentObjectModel, etc.
+    */
+
+    onCustomStatement: function(statementModel) {
+      var customResult = {};
+      var customContext = {};
+      // get the verb
+      var statement;
+      var customVerb = ADL.verbs[statementModel.get('verb')];
+
+      // get the object
+      var customIri = '';
+      if (statementModel.get('generateIri')) {
+        customIri = this.getUniqueIri(statementModel);
+      } else {
+        customIri = statementModel.get('_id');
+      }
+      var object = new ADL.XAPIStatement.Activity(customIri);
+      object.definition = {
+        name: this.getNameObject(statementModel),
+        type: this.getActivityType(statementModel)
+      };
+
+      // get result
+      // TODO
+
+      // get context
+      // TODO
+
+      statement = this.getStatement(this.getVerb(customVerb), object, customResult, customContext);
+      this.addGroupingActivity(statementModel, statement)
       this.sendStatement(statement);
     },
 
@@ -1089,7 +1132,7 @@ define([
       var actor = this.get('actor');
       var type = model.get('_type');
       var state = this.get('state');
-      var registration = this.get('shouldUseRegistration') === true 
+      var registration = this.get('shouldUseRegistration') === true
         ? this.get('registration')
         : null;
       var collectionName = _.findKey(this.coreObjects, function(o) {
@@ -1138,7 +1181,7 @@ define([
       var self = this;
       var activityId = this.get('activityId');
       var actor = this.get('actor');
-      var registration = this.get('shouldUseRegistration') === true 
+      var registration = this.get('shouldUseRegistration') === true
         ? this.get('registration')
         : null;
       var state = {};
@@ -1216,10 +1259,10 @@ define([
       var self = this;
       var activityId = this.get('activityId');
       var actor = this.get('actor');
-      var registration = this.get('shouldUseRegistration') === true 
+      var registration = this.get('shouldUseRegistration') === true
         ? this.get('registration')
         : null;
- 
+
       Async.each(_.keys(this.coreObjects), function(type, nextType) {
         self.xapiWrapper.deleteState(activityId, actor, type, registration, null, null, function(error, xhr) {
           if (error) {

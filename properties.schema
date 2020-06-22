@@ -216,6 +216,15 @@
                           "title": "assessments:complete",
                           "validators": [],
                           "help": "Triggered when an individual assessment is completed."
+                        },
+                        "plugin:customStatement": {
+                          "type": "boolean",
+                          "required": false,
+                          "inputType": "Checkbox",
+                          "default": true,
+                          "title": "plugin:customStatement",
+                          "validators": [],
+                          "help": "Custom xAPI statement triggered by an individual plugin."
                         }
                       }
                     },

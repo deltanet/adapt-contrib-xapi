@@ -15,7 +15,8 @@
 				"router:menu": true,
 				"router:page": true,
 				"questionView:recordInteraction": true,
-				"assessments:complete": true
+				"assessments:complete": true,
+				"plugin:customStatement": true
 			},
 			"contentObjects": {
 				"change:_isComplete": true

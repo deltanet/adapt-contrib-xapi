@@ -50,7 +50,8 @@ define([
         'router:page': false,
         'router:menu': false,
         'assessments:complete': true,
-        'questionView:recordInteraction': true
+        'questionView:recordInteraction': true,
+        "plugin:customStatement": true
       },
       contentObjects: {
         'change:_isComplete': false
@@ -473,7 +474,9 @@ define([
       }
 
       // Listen out for custom statements.
-      this.listenTo(Adapt, 'plugin:customXapiStatement', this.onCustomStatement);
+      if (this.coreEvents['Adapt']['plugin:customStatement']) {
+        this.listenTo(Adapt, 'plugin:customStatement', this.onCustomStatement);
+      }
 
       // Standard completion events for the various collection types, i.e.
       // course, contentobjects, articles, blocks and components.

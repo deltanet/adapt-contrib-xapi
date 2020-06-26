@@ -764,10 +764,19 @@ define([
       // get result
       // TODO
 
-      // get context
+      // get custom context
       // TODO
 
       statement = this.getStatement(this.getVerb(customVerb), object, customResult, customContext);
+
+      // add parent activity if part of assessment
+      if (statementModel && statementModel.get('_isPartOfAssessment')) {
+        var assessment = statementModel.assessment;
+        if (typeof assessment === 'object') {
+          statement.addParentActivity(this.getAssessmentObject(assessment));
+        }
+      }
+
       this.addGroupingActivity(statementModel, statement)
       this.sendStatement(statement);
     },

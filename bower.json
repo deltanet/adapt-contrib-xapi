@@ -9,8 +9,8 @@
     "Andy Bell <andrewb@learningpool.com>",
     "Brian Quinn <brian@learningpool.com>"
   ],
-  "displayName" : "xAPI",
-  "extension" : "xapi",
+  "displayName": "xAPI",
+  "extension": "xapi",
   "description": "An extension to track learner activity via xAPI",
   "main": "/js/index.js",
   "scripts": {

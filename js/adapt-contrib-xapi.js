@@ -31,7 +31,7 @@ define([
       activityId: null,
       actor: null,
       shouldTrackState: true,
-      shouldUseRegistration: false,
+      shouldUseRegistration: true,
       componentBlacklist: 'blank,graphic',
       isInitialised: false,
       state: {}
@@ -104,7 +104,7 @@ define([
           lang: this.getConfig('_lang'),
           generateIds: this.getConfig('_generateIds'),
           shouldTrackState: this.getConfig('_shouldTrackState'),
-          shouldUseRegistration: this.getConfig('_shouldUseRegistration') || false,
+          shouldUseRegistration: this.getConfig('_shouldUseRegistration') || true,
           componentBlacklist: this.getConfig('_componentBlacklist') || []
         });
 
@@ -273,6 +273,12 @@ define([
         }
 
         Adapt.trigger('xapi:lrs:initialize:success');
+
+        var globals = Adapt.course.get('_globals');
+        if (!globals._learnerInfo) {
+          globals._learnerInfo = {};
+        }
+        _.extend(globals._learnerInfo, Adapt.offlineStorage.get("learnerinfo"));
       });
     },
 
@@ -438,7 +444,7 @@ define([
       }
 
       // Allow surfacing the learner's info in _globals.
-      this.getLearnerInfo()
+      this.getLearnerInfo();
 
       this.listenTo(Adapt, 'app:languageChanged', this.onLanguageChanged);
 
@@ -958,6 +964,9 @@ define([
       statement.addGroupingActivity(this.getCourseActivity())
       statement.addGroupingActivity(this.getLessonActivity(assessment.pageId))
 
+      // log statement to LMS - bespoke debugging
+      this.sendLogToLMS(statement);
+
       // Delay so that component completion can be recorded before assessment completion.
       _.delay(function() {
         self.sendStatement(statement);
@@ -1057,6 +1066,9 @@ define([
 
       // Store a reference that the course has actually been completed.
       this.isComplete = true;
+
+      // log statement to LMS - bespoke debugging
+      this.sendLogToLMS(self.getCourseStatement(completionVerb, result));
 
       _.defer(function() {
         // Send the completion status.
@@ -1526,6 +1538,7 @@ define([
      * @param {array} [attachments] - An array of attachments to pass to the LRS.
      */
     onStatementReady: function(statement, callback, attachments) {
+
       this.xapiWrapper.sendStatement(statement, function(error) {
         if (error) {
           Adapt.trigger('xapi:lrs:sendStatement:error', error);
@@ -1647,6 +1660,21 @@ define([
       // Ensure notify appears on top of the loading screen
       $('.notify').css({ position: 'relative', zIndex: 5001 });
       Adapt.once('notify:closed', Adapt.wait.end);
+    },
+
+
+    /**
+     * Sends a statement and registration ID to logging function in LMS.
+     * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
+     */
+    sendLogToLMS: function(statement) {
+      var registration = this.get('registration') || null;
+      try {
+        window.opener.sendStatementToLMS(registration, statement);
+        console.log('adapt-contrib-xapi: Statement sent to LMS logger.');
+      } catch (error) {
+        console.error('adapt-contrib-xapi: Error sending statement to LMS logger: ' + error);
+      }
     }
   });
 

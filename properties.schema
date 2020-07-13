@@ -156,7 +156,7 @@
                 "_shouldUseRegistration": {
                   "type": "boolean",
                   "required": false,
-                  "default": false,
+                  "default": true,
                   "title": "Use registration",
                   "inputType": "Checkbox",
                   "validators": [],
@@ -194,7 +194,7 @@
                           "type": "boolean",
                           "required": true,
                           "inputType": "Checkbox",
-                          "default": false,
+                          "default": true,
                           "title": "router:page",
                           "validators": [],
                           "help": "Triggered when a page is displayed."
@@ -237,7 +237,7 @@
                           "type": "boolean",
                           "required": false,
                           "inputType": "Checkbox",
-                          "default": false,
+                          "default": true,
                           "title": "change:_isComplete",
                           "validators": [],
                           "help": "Triggered when a contentobject, i.e. a page or menu item, is completed."
@@ -285,7 +285,7 @@
                           "type": "boolean",
                           "required": false,
                           "inputType": "Checkbox",
-                          "default": true,
+                          "default": false,
                           "title": "change:_isComplete",
                           "validators": [],
                           "help": "Triggered when a component is completed."

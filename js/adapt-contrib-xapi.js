@@ -50,7 +50,8 @@ define([
         'router:page': false,
         'router:menu': false,
         'assessments:complete': true,
-        'questionView:recordInteraction': true
+        'questionView:recordInteraction': true,
+        "plugin:customStatement": true
       },
       contentObjects: {
         'change:_isComplete': false
@@ -478,6 +479,11 @@ define([
         this.listenTo(Adapt, 'assessments:complete', this.onAssessmentComplete);
       }
 
+      // Listen out for custom statements.
+      if (this.coreEvents['Adapt']['plugin:customStatement']) {
+        this.listenTo(Adapt, 'plugin:customStatement', this.onCustomStatement);
+      }
+
       // Standard completion events for the various collection types, i.e.
       // course, contentobjects, articles, blocks and components.
       _.each(_.keys(this.coreEvents), function(key) {
@@ -591,6 +597,10 @@ define([
         }
         case 'page': {
           type = ADL.activityTypes.lesson;
+          break;
+        }
+        default: {
+          type = ADL.activityTypes[model.get('_type')];
           break;
         }
       }
@@ -729,6 +739,51 @@ define([
       statement = this.getStatement(this.getVerb(ADL.verbs.experienced), object);
 
       this.addGroupingActivity(model, statement)
+      this.sendStatement(statement);
+    },
+
+    /**
+    * Sends an xAPI statement when plugin triggers a custom statement.
+    * @param {AdaptModel} model - An instance of AdaptModel, i.e. ContentObjectModel, etc.
+    */
+
+    onCustomStatement: function(statementModel) {
+      var customResult = {};
+      var customContext = {};
+      // get the verb
+      var statement;
+      var customVerb = ADL.verbs[statementModel.get('verb')];
+
+      // get the object
+      var customIri = '';
+      if (statementModel.get('generateIri')) {
+        customIri = this.getUniqueIri(statementModel);
+      } else {
+        customIri = statementModel.get('_id');
+      }
+      var object = new ADL.XAPIStatement.Activity(customIri);
+      object.definition = {
+        name: this.getNameObject(statementModel),
+        type: this.getActivityType(statementModel)
+      };
+
+      // get result
+      // TODO
+
+      // get custom context
+      // TODO
+
+      statement = this.getStatement(this.getVerb(customVerb), object, customResult, customContext);
+
+      // add parent activity if part of assessment
+      if (statementModel && statementModel.get('_isPartOfAssessment')) {
+        var assessment = statementModel.assessment;
+        if (typeof assessment === 'object') {
+          statement.addParentActivity(this.getAssessmentObject(assessment));
+        }
+      }
+
+      this.addGroupingActivity(statementModel, statement)
       this.sendStatement(statement);
     },
 

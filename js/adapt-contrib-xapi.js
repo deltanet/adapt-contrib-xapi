@@ -287,10 +287,10 @@ define([
       this.set({ displayLang: newLanguage });
 
       // Since a language change counts as a new attempt, reset the state.
-      this.deleteState(function() {
+      this.deleteState(_.bind(function() {
         // Send a statement to track the (new) course.
         this.sendStatement(this.getCourseStatement(ADL.verbs.launched));
-      });
+      }, this));
     },
 
     /**
@@ -1299,12 +1299,12 @@ define([
             return nextType(new Error('\'xhr\' parameter is missing from callback'));
           }
 
-          if (xhr.status !== 204) {
+          if (xhr.status === 204 || xhr.status === 200) {
+            return nextType();
+          } else {
             Adapt.log.warn('adapt-contrib-xapi: deleteState() failed for ' + activityId + ' (' + type + ')');
             return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
           }
-
-          return nextType();
         });
       }, function(error) {
         if (error) {

@@ -10,12 +10,14 @@
 		"_lang": "en-US",
 		"_generateIds": false,
 		"_shouldTrackState": false,
+		"_shouldUseRegistration": true,
 		"_coreEvents": {
 			"Adapt": {
 				"router:menu": true,
 				"router:page": true,
 				"questionView:recordInteraction": true,
-				"assessments:complete": true
+				"assessments:complete": true,
+				"plugin:customStatement": true
 			},
 			"contentObjects": {
 				"change:_isComplete": true

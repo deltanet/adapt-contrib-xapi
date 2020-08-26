@@ -31,7 +31,7 @@ define([
       activityId: null,
       actor: null,
       shouldTrackState: true,
-      shouldUseRegistration: false,
+      shouldUseRegistration: true,
       componentBlacklist: 'blank,graphic',
       isInitialised: false,
       state: {}
@@ -50,7 +50,8 @@ define([
         'router:page': false,
         'router:menu': false,
         'assessments:complete': true,
-        'questionView:recordInteraction': true
+        'questionView:recordInteraction': true,
+        "plugin:customStatement": true
       },
       contentObjects: {
         'change:_isComplete': false
@@ -103,7 +104,7 @@ define([
           lang: this.getConfig('_lang'),
           generateIds: this.getConfig('_generateIds'),
           shouldTrackState: this.getConfig('_shouldTrackState'),
-          shouldUseRegistration: this.getConfig('_shouldUseRegistration') || false,
+          shouldUseRegistration: this.getConfig('_shouldUseRegistration') || true,
           componentBlacklist: this.getConfig('_componentBlacklist') || []
         });
 
@@ -275,6 +276,12 @@ define([
         }
 
         Adapt.trigger('xapi:lrs:initialize:success');
+
+        var globals = Adapt.course.get('_globals');
+        if (!globals._learnerInfo) {
+          globals._learnerInfo = {};
+        }
+        _.extend(globals._learnerInfo, Adapt.offlineStorage.get("learnerinfo"));
       });
     },
 
@@ -283,10 +290,10 @@ define([
       this.set({ displayLang: newLanguage });
 
       // Since a language change counts as a new attempt, reset the state.
-      this.deleteState(function() {
+      this.deleteState(_.bind(function() {
         // Send a statement to track the (new) course.
         this.sendStatement(this.getCourseStatement(ADL.verbs.launched));
-      });
+      }, this));
     },
 
     /**
@@ -439,7 +446,7 @@ define([
       }
 
       // Allow surfacing the learner's info in _globals.
-      this.getLearnerInfo()
+      this.getLearnerInfo();
 
       this.listenTo(Adapt, 'app:languageChanged', this.onLanguageChanged);
 
@@ -472,6 +479,11 @@ define([
       // When an assessment is completed.
       if (this.coreEvents['Adapt']['assessments:complete']) {
         this.listenTo(Adapt, 'assessments:complete', this.onAssessmentComplete);
+      }
+
+      // Listen out for custom statements.
+      if (this.coreEvents['Adapt']['plugin:customStatement']) {
+        this.listenTo(Adapt, 'plugin:customStatement', this.onCustomStatement);
       }
 
       // Standard completion events for the various collection types, i.e.
@@ -587,6 +599,10 @@ define([
         }
         case 'page': {
           type = ADL.activityTypes.lesson;
+          break;
+        }
+        default: {
+          type = ADL.activityTypes[model.get('_type')];
           break;
         }
       }
@@ -725,6 +741,51 @@ define([
       statement = this.getStatement(this.getVerb(ADL.verbs.experienced), object);
 
       this.addGroupingActivity(model, statement)
+      this.sendStatement(statement);
+    },
+
+    /**
+    * Sends an xAPI statement when plugin triggers a custom statement.
+    * @param {AdaptModel} model - An instance of AdaptModel, i.e. ContentObjectModel, etc.
+    */
+
+    onCustomStatement: function(statementModel) {
+      var customResult = {};
+      var customContext = {};
+      // get the verb
+      var statement;
+      var customVerb = ADL.verbs[statementModel.get('verb')];
+
+      // get the object
+      var customIri = '';
+      if (statementModel.get('generateIri')) {
+        customIri = this.getUniqueIri(statementModel);
+      } else {
+        customIri = statementModel.get('_id');
+      }
+      var object = new ADL.XAPIStatement.Activity(customIri);
+      object.definition = {
+        name: this.getNameObject(statementModel),
+        type: this.getActivityType(statementModel)
+      };
+
+      // get result
+      // TODO
+
+      // get custom context
+      // TODO
+
+      statement = this.getStatement(this.getVerb(customVerb), object, customResult, customContext);
+
+      // add parent activity if part of assessment
+      if (statementModel && statementModel.get('_isPartOfAssessment')) {
+        var assessment = statementModel.assessment;
+        if (typeof assessment === 'object') {
+          statement.addParentActivity(this.getAssessmentObject(assessment));
+        }
+      }
+
+      this.addGroupingActivity(statementModel, statement)
       this.sendStatement(statement);
     },
 
@@ -905,6 +966,9 @@ define([
       statement.addGroupingActivity(this.getCourseActivity())
       statement.addGroupingActivity(this.getLessonActivity(assessment.pageId))
 
+      // log statement to LMS - bespoke debugging
+      this.sendLogToLMS(statement);
+
       // Delay so that component completion can be recorded before assessment completion.
       _.delay(function() {
         self.sendStatement(statement);
@@ -1004,6 +1068,9 @@ define([
 
       // Store a reference that the course has actually been completed.
       this.isComplete = true;
+
+      // log statement to LMS - bespoke debugging
+      this.sendLogToLMS(self.getCourseStatement(completionVerb, result));
 
       _.defer(function() {
         // Send the completion status.
@@ -1234,12 +1301,12 @@ define([
             return nextType(new Error('\'xhr\' parameter is missing from callback'));
           }
 
-          if (xhr.status !== 204) {
+          if (xhr.status === 204 || xhr.status === 200) {
+            return nextType();
+          } else {
             Adapt.log.warn('adapt-contrib-xapi: deleteState() failed for ' + activityId + ' (' + type + ')');
             return nextType(new Error('Invalid status code ' + xhr.status + ' returned from getState() call'));
           }
-
-          return nextType();
         });
       }, function(error) {
         if (error) {
@@ -1473,6 +1540,7 @@ define([
      * @param {array} [attachments] - An array of attachments to pass to the LRS.
      */
     onStatementReady: function(statement, callback, attachments) {
+
       this.xapiWrapper.sendStatement(statement, function(error) {
         if (error) {
           Adapt.trigger('xapi:lrs:sendStatement:error', error);
@@ -1594,6 +1662,21 @@ define([
       // Ensure notify appears on top of the loading screen
       $('.notify').css({ position: 'relative', zIndex: 5001 });
       Adapt.once('notify:closed', Adapt.wait.end);
+    },
+
+
+    /**
+     * Sends a statement and registration ID to logging function in LMS.
+     * @param {ADL.XAPIStatement[]} statements - An array of valid ADL.XAPIStatement objects.
+     */
+    sendLogToLMS: function(statement) {
+      var registration = this.get('registration') || null;
+      try {
+        window.opener.sendStatementToLMS(registration, statement);
+        console.log('adapt-contrib-xapi: Statement sent to LMS logger.');
+      } catch (error) {
+        console.error('adapt-contrib-xapi: Error sending statement to LMS logger: ' + error);
+      }
     }
   });
 

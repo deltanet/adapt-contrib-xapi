@@ -188,7 +188,7 @@ define([
 
       _.extend(globals._learnerInfo, Adapt.offlineStorage.get('learnerinfo'));
     },
-  
+
     /**
      * Intializes the ADL xapiWrapper code.
      * @param {ErrorOnlyCallback} callback
@@ -262,6 +262,9 @@ define([
      */
     onInitialised: function(error) {
       this.set({ isInitialised: !!!error });
+      if (error) {
+        Adapt.log.error('adapt-contrib-xapi: Initialisation error. ' + error);
+      }
 
       Adapt.wait.end();
 
@@ -433,7 +436,6 @@ define([
     setupListeners: function() {
       if (!this.get('isInitialised')) {
         Adapt.log.warn('adapt-contrib-xapi: Unable to setup listeners for xAPI');
-        return;
       }
 
       // Allow surfacing the learner's info in _globals.
@@ -1089,7 +1091,7 @@ define([
       var actor = this.get('actor');
       var type = model.get('_type');
       var state = this.get('state');
-      var registration = this.get('shouldUseRegistration') === true 
+      var registration = this.get('shouldUseRegistration') === true
         ? this.get('registration')
         : null;
       var collectionName = _.findKey(this.coreObjects, function(o) {
@@ -1138,7 +1140,7 @@ define([
       var self = this;
       var activityId = this.get('activityId');
       var actor = this.get('actor');
-      var registration = this.get('shouldUseRegistration') === true 
+      var registration = this.get('shouldUseRegistration') === true
         ? this.get('registration')
         : null;
       var state = {};
@@ -1216,10 +1218,10 @@ define([
       var self = this;
       var activityId = this.get('activityId');
       var actor = this.get('actor');
-      var registration = this.get('shouldUseRegistration') === true 
+      var registration = this.get('shouldUseRegistration') === true
         ? this.get('registration')
         : null;
- 
+
       Async.each(_.keys(this.coreObjects), function(type, nextType) {
         self.xapiWrapper.deleteState(activityId, actor, type, registration, null, null, function(error, xhr) {
           if (error) {

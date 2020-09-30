@@ -263,6 +263,9 @@ define([
      */
     onInitialised: function(error) {
       this.set({ isInitialised: !!!error });
+      if (error) {
+        Adapt.log.error('adapt-contrib-xapi: Initialisation error. ' + error);
+      }
 
       Adapt.wait.end();
 
@@ -440,7 +443,6 @@ define([
     setupListeners: function() {
       if (!this.get('isInitialised')) {
         Adapt.log.warn('adapt-contrib-xapi: Unable to setup listeners for xAPI');
-        return;
       }
 
       // Allow surfacing the learner's info in _globals.

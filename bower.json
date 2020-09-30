@@ -1,6 +1,6 @@
 {
   "name": "adapt-contrib-xapi",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "framework": ">=3",
   "homepage": "https://github.com/deltanet/adapt-contrib-xapi",
   "authors": [

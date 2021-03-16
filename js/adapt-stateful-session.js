@@ -3,7 +3,8 @@ define([
   'core/js/enums/completionStateEnum',
   './xapi',
   './utils',
-  'libraries/async.min'
+  'libraries/async.min',
+  'libraries/xapiwrapper.min'
 ], function(Adapt, COMPLETION_STATE, xapi, utilities, Async) {
 
     // Implements Adapt session statefulness
@@ -56,63 +57,15 @@ define([
 
         this.componentBlacklist = this.getConfig('_componentBlacklist') || [];
 
-        if (this.componentBlacklist && !_.isArray(componentBlacklist)) {
+        if (this.componentBlacklist && !_.isArray(this.componentBlacklist)) {
           // Create the blacklist array and force the items to lowercase.
           this.componentBlacklist = this.componentBlacklist.split(/,\s?/).map(function(component) {
             return component.toLowerCase();
           });
         }
         this.getLearnerInfo();
-
-        xapi.getState(_.bind(function(error) {
-          if (error) {
-            Adapt.log.warn('adapt-contrib-xapi: Unable to restore state, stateful session not initialised');
-            return;
-          }
-
-          this.restoreState();
-          _.defer(this.setupListeners.bind(this));
-          //return this;
-        }, this));
-      },
-
-      /**
-       * Refresh course progress from loaded state.
-       */
-      // TODO - should this be moved to xapi to ensure it is initialised
-      // as xapi initilisation is tied to Adapt.wait.for
-      restoreState: function() {
-        var state = xapi.getCurrentState();
-
-        if (_.isEmpty(state)) {
-          return;
-        }
-
-        var Adapt = require('core/js/adapt');
-
-        if (state.components) {
-          _.each(state.components, function(stateObject) {
-            var restoreModel = Adapt.findById(stateObject._id);
-
-            if (restoreModel) {
-              restoreModel.setTrackableState(stateObject);
-            } else {
-              Adapt.log.warn('adapt-contrib-xapi: Unable to restore state for component: ' + stateObject._id);
-            }
-          });
-        }
-
-        if (state.blocks) {
-          _.each(state.blocks, function(stateObject) {
-            var restoreModel = Adapt.findById(stateObject._id);
-
-            if (restoreModel) {
-              restoreModel.setTrackableState(stateObject);
-            } else {
-              Adapt.log.warn('adapt-contrib-xapi: Unable to restore state for block: ' + stateObject._id);
-            }
-          });
-        }
+        this.getCourseInfo();
+        this.setupListeners();
       },
 
       /**
@@ -130,6 +83,15 @@ define([
         _.extend(globals._learnerInfo, Adapt.offlineStorage.get('learnerinfo'));
       },
 
+      // populate the course info
+      getCourseInfo: function() {
+        if (!xapi.isXapiInitialised()) {
+          Adapt.log.warn('adapt-contrib-xapi: Unable to set coursename and description for xAPI');
+        }
+        xapi.courseName = Adapt.course.get('displayTitle') || Adapt.course.get('title');
+        xapi.courseDescription = Adapt.course.get('description') || '';
+      },
+
       getConfig: function(key) {
         if (!this.config || key === '' || typeof this.config[key] === 'undefined') {
           return false;
@@ -145,10 +107,7 @@ define([
         }
 
         this.listenTo(Adapt, 'app:languageChanged', this.onLanguageChanged);
-
-        if (this.getConfig('_shouldTrackState')) {
-          this.listenTo(Adapt, 'state:change', xapi.sendState);  // TODO - deltanet, this should probably go in xapi.js
-        }
+        this.listenTo(Adapt, 'adapt:initialize', this.onAdaptInitialize);
 
         // Use the config to specify the core events.
         this.coreEvents = _.extend(this.coreEvents, this.getConfig('_coreEvents'));
@@ -198,6 +157,29 @@ define([
       // ########################################
       // Event functions
       // TODO - add 'libraries/xapiwrapper.min', to this file or move all functions containing ADL to xapi.js
+
+      onAdaptInitialize: function() {
+        // Send the 'launched' and 'initialized' statements.
+        var statements = [
+          xapi.getCourseStatement(ADL.verbs.launched),
+          xapi.getCourseStatement(ADL.verbs.initialized)
+        ];
+
+        xapi.sendStatements(statements, _.bind(function(error) {
+          if (error) {
+            // TODO - need to at least log an error if not alert and stop process.
+          }
+
+          if (_.isEmpty(this.state)) {
+            // This is a new attempt, send 'attempted'.
+            xapi.sendStatement(xapi.getCourseStatement(ADL.verbs.attempted));
+          } else {
+            // This is a continuation of an existing attempt, send 'resumed'.
+            xapi.sendStatement(xapi.getCourseStatement(ADL.verbs.resumed));
+          }
+        }, this));
+      },
+
 
       onLanguageChanged: function(newLanguage) {
         // Update the language.
@@ -418,6 +400,10 @@ define([
         xapi.sendStatement(statement);
       },
 
+      onStateChanged: function(event) {
+        xapi.sendState;
+      },
+
       /**
       * Sends an xAPI statement when plugin triggers a custom statement.
       * @param {AdaptModel} model - An instance of AdaptModel, i.e. ContentObjectModel, etc.
@@ -634,6 +620,7 @@ define([
         var pageModel = (typeof page === 'string')
           ? Adapt.findById(page)
           : page
+
         var activity = new ADL.XAPIStatement.Activity(this.getUniqueIri(pageModel))
         var name = this.getNameObject(pageModel)
 

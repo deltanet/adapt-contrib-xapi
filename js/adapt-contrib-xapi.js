@@ -2,16 +2,15 @@ define([
     'core/js/adapt',
     './xapi',
     './adapt-stateful-session',
-    './adapt-offlineStorage-xapi'
+    './adapt-offlineStorage-xapi',
+    'libraries/xapiwrapper.min'
 ], function(Adapt, xapi, adaptStatefulSession) {
-
-    //SCORM session manager
 
     var xAPIController = _.extend({
 
         _config: null,
 
-    //Session Begin
+        //Session Begin
 
         initialize: function() {
             this.listenToOnce(Adapt, {
@@ -30,7 +29,7 @@ define([
                 Adapt.offlineStorage.setReadyStatus();
                 return;
             }
-            console.log(xapi);
+
             xapi.initialize();
 
             /*
@@ -45,25 +44,18 @@ define([
         },
 
         setupEventListeners: function() {
-            var advancedSettings = this._config._advancedSettings;
-            var shouldCommitOnVisibilityChange = (!advancedSettings ||
-                advancedSettings._commitOnVisibilityChangeHidden !== false) &&
-                document.addEventListener;
-
-            this._onWindowUnload = this.onWindowUnload.bind(this);
-            $(window).on('beforeunload unload', this._onWindowUnload);
-
-            if (shouldCommitOnVisibilityChange) {
-                document.addEventListener("visibilitychange", this.onVisibilityChange);
+            if (['ios', 'android'].indexOf(Adapt.device.OS) > -1) {
+              $(document).on('visibilitychange', this.onVisibilityChange.bind(this));
+            } else {
+              $(window).on('beforeunload unload', xapi.sendUnloadStatements.bind(this));
             }
         },
 
-        removeEventListeners: function() {
-            $(window).off('beforeunload unload', this._onWindowUnload);
-
-            document.removeEventListener("visibilitychange", this.onVisibilityChange);
-        },
-
+        /**
+         * Sends 'suspended' and 'terminated' statements to the LRS when the window
+         * is closed or the browser app is minimised on a device. Sends a 'resume'
+         * statement when switching back to a suspended session.
+         */
         onVisibilityChange: function() {
           if (document.visibilityState === 'visible') {
             this.isTerminated = false;
@@ -72,16 +64,6 @@ define([
           }
 
           xapi.sendUnloadStatements();
-        },
-
-        //Session End
-
-        onWindowUnload: function() {
-            this.removeEventListeners();
-
-            if (!scorm.finishCalled){
-                scorm.finish();
-            }
         }
 
     }, Backbone.Events);

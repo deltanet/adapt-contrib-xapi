@@ -650,6 +650,7 @@ define([
         }, function(error) {
           if (error) {
             Adapt.log.error('adapt-contrib-xapi:', error);
+            Adapt.offlineStorage.setReadyStatus();
             return callback(error);
           }
 

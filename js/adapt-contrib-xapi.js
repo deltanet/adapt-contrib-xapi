@@ -17,7 +17,7 @@ define([
                 'offlineStorage:prepare': this.onPrepareOfflineStorage,
                 'app:dataReady': function() {
                     Adapt.wait.for(adaptStatefulSession.initialize.bind(adaptStatefulSession));
-                    //Adapt.wait.for(xapi.initialize.bind(xapi));
+                    Adapt.wait.for(xapi.restoreState.bind(xapi));
                 }
             });
         },
@@ -37,8 +37,6 @@ define([
             chosen language before the rest of the course data loads
             */
             Adapt.offlineStorage.get();
-
-            Adapt.offlineStorage.setReadyStatus();
 
             this.setupEventListeners();
         },

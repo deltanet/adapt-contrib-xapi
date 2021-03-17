@@ -102,7 +102,6 @@ define([
             // Set the LRS specific properties.
             this.registration = this.getLRSAttribute('registration');
             this.actor = this.getLRSAttribute('actor');
-
             this.xapiWrapper.strictCallbacks = true;
 
             callback();
@@ -152,7 +151,6 @@ define([
 
       onInitialised: function(error) {
         this.isInitialised = !!!error;
-
         if (error) {
           Adapt.log.error('adapt-contrib-xapi: Initialisation error. ' + error);
         }
@@ -659,12 +657,16 @@ define([
             self.state = state;
           }
 
-          self.restoreState(_.bind(function(error) {
+          // restore offline storage on initialise, then rest of state once dataLoaded
+          self.restoreOfflinestorage(_.bind(function(error) {
             if (error) {
+              Adapt.offlineStorage.setReadyStatus();
               Adapt.trigger('xapi:lrs:initialize:error', error);
               callback(error);
             }
-            Adapt.trigger('xapi:stateLoaded');
+            Adapt.offlineStorage.setReadyStatus();
+            Adapt.trigger('xapi:offlineStorageLoaded');
+            //Adapt.trigger('xapi:stateLoaded');
             callback();
           }, self));
         });
@@ -722,9 +724,33 @@ define([
       },
 
       /**
-       * Refresh course progress from loaded state.
+       * Refresh offlineStorage from loaded state.
        */
       // as xapi initilisation is tied to Adapt.wait.for
+      restoreOfflinestorage: function(callback) {
+        if (_.isEmpty(this.state)) {
+          return callback();
+        }
+
+        var Adapt = require('core/js/adapt');
+
+        try {
+          if (this.state.offlineStorage) {
+            _.each(this.state.offlineStorage, function(value, key) {
+              Adapt.offlineStorage.set(key, value);
+            });
+            callback();
+          } else {
+            callback('adapt-contrib-xapi: Unable to restore offline storage')
+          }
+        } catch(e) {
+          callback(e)
+        }
+      },
+
+      /**
+       * Refresh course progress from loaded state.
+       */
       restoreState: function(callback) {
         if (_.isEmpty(this.state)) {
           return callback();
@@ -754,12 +780,6 @@ define([
               } else {
                 Adapt.log.warn('adapt-contrib-xapi: Unable to restore state for block: ' + stateObject._id);
               }
-            });
-          }
-
-          if (this.state.offlineStorage) {
-            _.each(Object.keys(this.state.offlineStorage), function(key) {
-              Adapt.offlineStorage.set(key, this.state.offlineStorage[key]);
             });
           }
         } catch(e) {

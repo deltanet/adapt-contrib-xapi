@@ -152,6 +152,8 @@ define([
       onInitialised: function(error) {
         this.isInitialised = !!!error;
         if (error) {
+          // getState will be bypassed so set offlineStorage to ready
+          Adapt.offlineStorage.setReadyStatus();
           Adapt.log.error('adapt-contrib-xapi: Initialisation error. ' + error);
         }
 

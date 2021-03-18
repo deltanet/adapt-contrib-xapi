@@ -15,10 +15,7 @@ define([
         initialize: function() {
             this.listenToOnce(Adapt, {
                 'offlineStorage:prepare': this.onPrepareOfflineStorage,
-                'app:dataReady': function() {
-                    Adapt.wait.for(adaptStatefulSession.initialize.bind(adaptStatefulSession));
-                    Adapt.wait.for(xapi.restoreState.bind(xapi));
-                }
+                'app:dataReady': this.onPrepareState
             });
         },
 
@@ -39,6 +36,11 @@ define([
             Adapt.offlineStorage.get();
 
             this.setupEventListeners();
+        },
+
+        onPrepareState: function() {
+          adaptStatefulSession.initialize();
+          xapi.restoreState();
         },
 
         setupEventListeners: function() {

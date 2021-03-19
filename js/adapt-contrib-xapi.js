@@ -40,7 +40,11 @@ define([
 
         onPrepareState: function() {
           adaptStatefulSession.initialize();
-          xapi.restoreState();
+          xapi.restoreState(function(error) {
+            if (error) {
+              Adapt.log.warn('adapt-contrib-xapi: Unable to restore state for block: ' + stateObject._id);
+            }
+          });
         },
 
         setupEventListeners: function() {

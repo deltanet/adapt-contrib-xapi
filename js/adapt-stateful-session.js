@@ -34,16 +34,6 @@ define([
         }
       },
 
-      // An object describing the core Adapt framework collections.
-      coreObjects: {
-        course: 'course',
-        contentObjects: ['menu', 'page'],
-        articles: 'article',
-        blocks: 'block',
-        components: 'component',
-        offlineStorage: 'offlineStorage'
-      },
-
       initialize: function() {
         if (!Adapt.config) {
           return;
@@ -72,7 +62,6 @@ define([
        * Replace the hard-coded _learnerInfo data in _globals with the actual data from the LRS.
        */
 
-      // TODO - check this function does anything necessary
       getLearnerInfo: function() {
         var globals = Adapt.course.get('_globals');
 
@@ -156,7 +145,6 @@ define([
 
       // ########################################
       // Event functions
-      // TODO - add 'libraries/xapiwrapper.min', to this file or move all functions containing ADL to xapi.js
 
       onAdaptInitialize: function() {
         // Send the 'launched' and 'initialized' statements.
@@ -167,7 +155,7 @@ define([
 
         xapi.sendStatements(statements, _.bind(function(error) {
           if (error) {
-            // TODO - need to at least log an error if not alert and stop process.
+            Adapt.log.warn('adapt-contrib-xapi: Error sending statement: ' + error);
           }
 
           if (_.isEmpty(this.state)) {
@@ -183,7 +171,6 @@ define([
 
       onLanguageChanged: function(newLanguage) {
         // Update the language.
-        //this.set({ displayLang: newLanguage });
         Adapt.offlineStorage.set('lang', newLanguage);
 
         // Since a language change counts as a new attempt, reset the state.
@@ -223,7 +210,7 @@ define([
           result = { completion: true };
         } else {
           // The assessment(s) play a part in completion, so use their result.
-          result = this.getAssessmentResultObject(completionData.assessment);
+          result = utilities.getAssessmentResultObject(completionData.assessment);
         }
 
         // Store a reference that the course has actually been completed.
@@ -337,7 +324,7 @@ define([
        */
       onAssessmentComplete: function(assessment) {
         var object = this.getAssessmentObject(assessment)
-        var result = this.getAssessmentResultObject(assessment);
+        var result = utilities.getAssessmentResultObject(assessment);
         var statement;
 
         if (assessment.isPass) {
@@ -429,12 +416,6 @@ define([
           type: this.getActivityType(statementModel)
         };
 
-        // get result
-        // TODO
-
-        // get custom context
-        // TODO
-
         statement = xapi.getStatement(xapi.getVerb(customVerb), object, customResult, customContext);
 
         // add parent activity if part of assessment
@@ -450,28 +431,7 @@ define([
       },
 
       // ########################################
-      // Utility functions for on event functions
-      // TODO - move these to utils.js if possible
-
-      /**
-       * Takes an assessment state and returns a results object based on it.
-       * @param {object} assessment - An instance of the assessment state.
-       * @return {object} - A result object containing score, success and completion properties.
-       */
-      getAssessmentResultObject: function(assessment) {
-        var result = {
-          score: {
-            scaled: (assessment.scoreAsPercent / 100),
-            raw: assessment.score,
-            min: 0,
-            max: assessment.maxScore
-          },
-          success: assessment.isPass,
-          completion: assessment.isComplete
-        };
-
-        return result;
-      },
+      // Utility functions for events
 
       /**
        * Gets a unique IRI for a given model.

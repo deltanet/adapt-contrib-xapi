@@ -148,6 +148,26 @@ define([
       }
 
       return response;
+    },
+
+    /**
+     * Takes an assessment state and returns a results object based on it.
+     * @param {object} assessment - An instance of the assessment state.
+     * @return {object} - A result object containing score, success and completion properties.
+     */
+    getAssessmentResultObject: function(assessment) {
+      var result = {
+        score: {
+          scaled: (assessment.scoreAsPercent / 100),
+          raw: assessment.score,
+          min: 0,
+          max: assessment.maxScore
+        },
+        success: assessment.isPass,
+        completion: assessment.isComplete
+      };
+
+      return result;
     }
   }
 

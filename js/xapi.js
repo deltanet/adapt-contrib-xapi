@@ -166,13 +166,6 @@ define([
           Adapt.trigger('xapi:lrs:initialize:success');
 
           this.setupEventListeners();
-          /*
-          var globals = Adapt.course.get('_globals');
-          if (!globals._learnerInfo) {
-            globals._learnerInfo = {};
-          }
-          _.extend(globals._learnerInfo, Adapt.offlineStorage.get("learnerinfo"));
-          */
         }, this));
       },
 
@@ -668,8 +661,7 @@ define([
               callback(error);
             }
             Adapt.offlineStorage.setReadyStatus();
-            Adapt.trigger('xapi:offlineStorageLoaded');
-            //Adapt.trigger('xapi:stateLoaded');
+            Adapt.trigger('xapi:stateLoaded');
             callback();
           }, self));
         });
@@ -729,7 +721,6 @@ define([
       /**
        * Refresh offlineStorage from loaded state.
        */
-      // as xapi initilisation is tied to Adapt.wait.for
       restoreOfflinestorage: function(callback) {
         if (_.isEmpty(this.state)) {
           return callback();

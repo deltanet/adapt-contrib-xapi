@@ -30,7 +30,7 @@
       "title": "LRS connection error message",
       "type": "string",
       "required": true,
-      "default": "We were unable to connect to your Learning Record Store (LRS). This means that your progress cannot be recorded.",
+      "default": "An error has occurred. The course lost connection to your Learning Record Store (LRS) and your progress will no longer be recorded. Please close this window and relaunch the course from the LMS to reconnect and make sure your progress is saved.",
       "inputType": "Text",
       "validators": [
         "required"
